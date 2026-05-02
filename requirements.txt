@@ -6,3 +6,4 @@ gTTS
 numpy
 scipy
 pydantic
+redis

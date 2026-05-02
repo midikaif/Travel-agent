@@ -1,6 +1,7 @@
 import os
 import tempfile
 import uuid
+import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -11,9 +12,11 @@ from groq import Groq
 from gtts import gTTS
 import numpy as np
 import scipy.io.wavfile as wav
+import redis
 
 # ── Config ──────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+REDIS_URL = os.getenv("REDIS_URL", None)
 
 SYSTEM_PROMPT = """
 Tu "ramesh" hai, ek friendly inbound travel ticketing agent.
@@ -47,9 +50,14 @@ CONSTRAINTS:
 - Kabhi card/bank details mat maango.
 """
 
-# ── In-memory session store ──────────────────────────────
-# session_id -> conversation history list
-sessions: dict[str, list] = {}
+# ── Redis session store ──────────────────────────────────
+# Connect to Upstash Redis if URL provided, else use in-memory fallback
+if REDIS_URL:
+    r = redis.from_url(REDIS_URL, decode_responses=True)
+else:
+    # Fallback for local development
+    sessions: dict[str, list] = {}
+    r = None
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -85,19 +93,33 @@ def transcribe(audio_path: str) -> str:
 
 
 def get_llm_response(session_id: str, user_text: str) -> str:
-    if session_id not in sessions:
-        sessions[session_id] = []
+    # Get conversation history from Redis or memory
+    if r:
+        history_json = r.get(f"session:{session_id}")
+        history = json.loads(history_json) if history_json else []
+    else:
+        history = sessions.get(session_id, [])
 
-    sessions[session_id].append({"role": "user", "content": user_text})
+    # Add user message
+    history.append({"role": "user", "content": user_text})
 
+    # Get LLM response
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + sessions[session_id],
+        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
         max_tokens=200,
     )
 
+    # Add assistant response
     reply = response.choices[0].message.content.strip()
-    sessions[session_id].append({"role": "assistant", "content": reply})
+    history.append({"role": "assistant", "content": reply})
+
+    # Save back to Redis or memory (TTL: 24 hours)
+    if r:
+        r.setex(f"session:{session_id}", 86400, json.dumps(history))
+    else:
+        sessions[session_id] = history
+
     return reply
 
 
@@ -121,7 +143,10 @@ def root():
 def new_session():
     """Create a new conversation session. Call this when a new user opens the page."""
     session_id = str(uuid.uuid4())
-    sessions[session_id] = []
+    if r:
+        r.setex(f"session:{session_id}", 86400, json.dumps([]))
+    else:
+        sessions[session_id] = []
     return {"session_id": session_id}
 
 
@@ -175,7 +200,10 @@ async def chat(session_id: str, audio: UploadFile = File(...)):
 @app.delete("/session/{session_id}")
 def clear_session(session_id: str):
     """Clear conversation history for a session."""
-    sessions.pop(session_id, None)
+    if r:
+        r.delete(f"session:{session_id}")
+    else:
+        sessions.pop(session_id, None)
     return {"cleared": session_id}
 
 
@@ -186,6 +214,10 @@ def greeting(session_id: str):
     Call this when the page loads to play ramesh's intro.
     """
     text = "Namaste! Main ramesh hoon, aapka bus booking agent. Aap kahan se travel karna chahte ho?"
-    sessions[session_id] = [{"role": "assistant", "content": text}]
+    greeting_history = [{"role": "assistant", "content": text}]
+    if r:
+        r.setex(f"session:{session_id}", 86400, json.dumps(greeting_history))
+    else:
+        sessions[session_id] = greeting_history
     mp3_path = text_to_speech(text)
     return FileResponse(mp3_path, media_type="audio/mpeg")
