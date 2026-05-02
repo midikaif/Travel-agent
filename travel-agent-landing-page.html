@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="hi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VoiceBook — AI Bus Booking Agent</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Outfit:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --saffron: #e8a020;
+        --saffron-light: #fdf3e0;
+        --saffron-dark: #b87c10;
+        --ink: #0e0e0e;
+        --muted: #666;
+        --border: #e5e5e5;
+        --surface: #f8f8f6;
+        --white: #ffffff;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Outfit", sans-serif;
+        color: var(--ink);
+        background: var(--white);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 2rem;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .nav-logo {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 1.3rem;
+        color: var(--ink);
+        text-decoration: none;
+      }
+      .nav-logo span {
+        color: var(--saffron);
+      }
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .lang-toggle {
+        display: flex;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .lang-btn {
+        padding: 7px 14px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+        font-family: "Outfit", sans-serif;
+        transition: all 0.18s;
+      }
+      .lang-btn.active {
+        background: var(--ink);
+        color: var(--white);
+      }
+
+      .nav-cta {
+        background: var(--ink);
+        color: var(--white);
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: opacity 0.2s;
+        font-family: "Outfit", sans-serif;
+      }
+      .nav-cta:hover {
+        opacity: 0.8;
+      }
+
+      .hero {
+        padding: 140px 2rem 80px;
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+      }
+
+      .hero-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--saffron-light);
+        border: 1px solid #f0c060;
+        color: var(--saffron-dark);
+        font-size: 11px;
+        font-weight: 500;
+        padding: 5px 14px;
+        border-radius: 20px;
+        margin-bottom: 1.5rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .hero-tag::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--saffron);
+        border-radius: 50%;
+      }
+
+      h1 {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: clamp(2.2rem, 4vw, 3.4rem);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin-bottom: 1.25rem;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--saffron);
+      }
+
+      .hero-sub {
+        font-size: 1rem;
+        color: var(--muted);
+        max-width: 420px;
+        margin-bottom: 2rem;
+        font-weight: 300;
+        line-height: 1.75;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn-primary {
+        background: var(--saffron);
+        color: var(--ink);
+        padding: 13px 26px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition:
+          background 0.2s,
+          transform 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "Outfit", sans-serif;
+      }
+      .btn-primary:hover {
+        background: var(--saffron-dark);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--ink);
+        padding: 13px 26px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1.5px solid var(--border);
+        cursor: pointer;
+        transition: border-color 0.2s;
+        font-family: "Outfit", sans-serif;
+      }
+      .btn-secondary:hover {
+        border-color: #999;
+      }
+
+      .hero-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border);
+      }
+      .stat-num {
+        font-family: "Syne", sans-serif;
+        font-size: 1.7rem;
+        font-weight: 800;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .demo-card {
+        background: var(--ink);
+        border-radius: 20px;
+        padding: 1.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+      }
+      .demo-card::before {
+        content: "";
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: var(--saffron);
+        opacity: 0.07;
+        border-radius: 50%;
+      }
+
+      .demo-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .demo-avatar {
+        width: 40px;
+        height: 40px;
+        background: var(--saffron);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 14px;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .demo-agent-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .demo-agent-status {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #4caf50;
+        border-radius: 50%;
+      }
+
+      .key-btn {
+        margin-left: auto;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        padding: 6px 11px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 12px;
+        font-family: "Outfit", sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .key-btn:hover {
+        background: rgba(255, 255, 255, 0.16);
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .api-setup {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        display: none;
+        gap: 8px;
+        align-items: center;
+      }
+      .api-input {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 7px;
+        padding: 8px 12px;
+        color: white;
+        font-size: 12px;
+        font-family: "Outfit", sans-serif;
+        outline: none;
+      }
+      .api-input::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+      }
+      .api-input:focus {
+        border-color: var(--saffron);
+      }
+      .api-save-btn {
+        background: var(--saffron);
+        border: none;
+        color: var(--ink);
+        padding: 8px 14px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        font-family: "Outfit", sans-serif;
+      }
+
+      .browser-note {
+        background: rgba(255, 200, 50, 0.12);
+        border: 1px solid rgba(255, 200, 50, 0.25);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: rgba(255, 220, 100, 0.85);
+        margin-bottom: 10px;
+        display: none;
+      }
+
+      .chat-messages {
+        min-height: 200px;
+        max-height: 280px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 1rem;
+      }
+      .chat-messages::-webkit-scrollbar {
+        width: 3px;
+      }
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 2px;
+      }
+
+      .msg {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 13.5px;
+        line-height: 1.5;
+        animation: msgIn 0.2s ease;
+      }
+      @keyframes msgIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .msg-agent {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.92);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      .msg-user {
+        background: var(--saffron);
+        color: var(--ink);
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+        font-weight: 500;
+      }
+      .msg-thinking {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.35);
+        align-self: flex-start;
+        font-style: italic;
+        font-size: 12px;
+        padding: 8px 14px;
+      }
+
+      .demo-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .mic-btn {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: none;
+        background: var(--saffron);
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .mic-btn:hover {
+        background: var(--saffron-dark);
+        transform: scale(1.05);
+      }
+      .mic-btn.listening {
+        background: #e74c3c;
+        animation: pulse 1.2s infinite;
+      }
+      .mic-btn.speaking {
+        background: #27ae60;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 12px rgba(231, 76, 60, 0);
+        }
+      }
+
+      .demo-hint {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        line-height: 1.5;
+      }
+      .demo-hint strong {
+        color: rgba(255, 255, 255, 0.65);
+        font-weight: 500;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .section {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 80px 2rem;
+      }
+      .section-tag {
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--saffron-dark);
+        margin-bottom: 0.75rem;
+      }
+      h2 {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: clamp(1.8rem, 3vw, 2.6rem);
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin-bottom: 1rem;
+      }
+      .section-sub {
+        color: var(--muted);
+        font-size: 1rem;
+        max-width: 500px;
+        font-weight: 300;
+        line-height: 1.75;
+        margin-bottom: 3rem;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1.25rem;
+      }
+      .feature-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.75rem;
+        transition:
+          border-color 0.2s,
+          transform 0.2s;
+      }
+      .feature-card:hover {
+        border-color: var(--saffron);
+        transform: translateY(-3px);
+      }
+      .feature-icon {
+        width: 44px;
+        height: 44px;
+        background: var(--saffron-light);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 20px;
+      }
+      .feature-title {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .feature-desc {
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.65;
+        font-weight: 300;
+      }
+
+      .how-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      .how-step {
+        padding: 2rem 1.5rem 2rem 0;
+      }
+      .step-num {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 14px;
+        margin-bottom: 1rem;
+      }
+      .step-title {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin-bottom: 0.4rem;
+      }
+      .step-desc {
+        font-size: 13.5px;
+        color: var(--muted);
+        font-weight: 300;
+        line-height: 1.65;
+      }
+
+      .route-bar {
+        background: var(--ink);
+        border-radius: 16px;
+        padding: 2rem 2.5rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin-top: 2.5rem;
+      }
+      .route-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 10px;
+      }
+      .route-cities {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .city-chip {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .route-arrow {
+        color: var(--saffron);
+      }
+      .route-note {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+        max-width: 220px;
+        line-height: 1.55;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem;
+        text-align: center;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 768px) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 2.5rem;
+          padding-top: 100px;
+        }
+        nav {
+          padding: 0 1rem;
+        }
+        .section {
+          padding: 60px 1.25rem;
+        }
+        .route-bar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="#" class="nav-logo">Voice<span>Book</span></a>
+      <div class="nav-right">
+        <div class="lang-toggle">
+          <button class="lang-btn" id="btnEn" onclick="setLang('en')">
+            EN
+          </button>
+          <button class="lang-btn active" id="btnHi" onclick="setLang('hi')">
+            HI
+          </button>
+        </div>
+        <a
+          href="#demo"
+          class="nav-cta"
+          id="navCta"
+          data-en="Try Demo"
+          data-hi="Demo Try Karo"
+          >Demo Try Karo</a
+        >
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <div
+          class="hero-tag"
+          data-en="AI-Powered Bus Booking"
+          data-hi="AI se Powered Bus Booking"
+        >
+          AI se Powered Bus Booking
+        </div>
+        <h1
+          data-en="Answer every passenger <em>call</em>"
+          data-hi="Har passenger ka <em>call</em> answer karo"
+        >
+          Har passenger ka <em>call</em> answer karo
+        </h1>
+        <p
+          class="hero-sub"
+          data-en="VoiceBook is an AI voice agent for your bus travel office — available 24/7, speaks Hindi and Hinglish. Never miss a booking again."
+          data-hi="VoiceBook ek AI voice agent hai jo aapke bus travel office ke liye 24/7 calls handle karta hai — Hindi aur Hinglish mein. Koi missed booking nahi."
+        >
+          VoiceBook ek AI voice agent hai jo aapke bus travel office ke liye
+          24/7 calls handle karta hai — Hindi aur Hinglish mein. Koi missed
+          booking nahi.
+        </p>
+        <div class="hero-actions">
+          <a href="#demo" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zm-4 8a5 5 0 0 0 10 0h2a7 7 0 0 1-14 0h2zm5 9v-2h2v2h2v2H9v-2h2z"
+              />
+            </svg>
+            <span data-en="Try Live Demo" data-hi="Live Demo Try Karo"
+              >Live Demo Try Karo</span
+            >
+          </a>
+          <a
+            href="#features"
+            class="btn-secondary"
+            data-en="Learn More"
+            data-hi="Aur Janein"
+            >Aur Janein</a
+          >
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-num">24/7</div>
+            <div
+              class="stat-label"
+              data-en="Always available"
+              data-hi="Hamesha available"
+            >
+              Hamesha available
+            </div>
+          </div>
+          <div>
+            <div class="stat-num" style="color: var(--saffron)">Zero</div>
+            <div
+              class="stat-label"
+              data-en="Missed calls"
+              data-hi="Missed calls"
+            >
+              Missed calls
+            </div>
+          </div>
+          <div>
+            <div class="stat-num">3s</div>
+            <div
+              class="stat-label"
+              data-en="Response time"
+              data-hi="Response time"
+            >
+              Response time
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-card" id="demo">
+        <div class="demo-header">
+          <div class="demo-avatar">PB</div>
+          <div>
+            <div class="demo-agent-name">ramesh</div>
+            <div class="demo-agent-status">
+              <span class="status-dot"></span> AI Booking Agent · Hindi /
+              Hinglish
+            </div>
+          </div>
+          <button class="key-btn" onclick="toggleApiSetup()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2a5 5 0 1 1 0-10 5 5 0 0 1 0 10zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"
+              />
+            </svg>
+            API Key
+          </button>
+        </div>
+
+        <div class="browser-note" id="browserNote">
+          ⚠️ Voice sirf Chrome mein kaam karta hai.
+        </div>
+
+        <div class="api-setup" id="apiSetup">
+          <input
+            type="password"
+            class="api-input"
+            id="apiKeyInput"
+            placeholder="Groq API key (gsk_...)"
+          />
+          <button class="api-save-btn" onclick="saveApiKey()">Save</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg msg-agent">
+            Namaste! Main ramesh hoon, aapka bus booking agent. Aap kahan se
+            travel karna chahte ho?
+          </div>
+        </div>
+
+        <div class="demo-controls">
+          <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zm-4 8a5 5 0 0 0 10 0h2a7 7 0 0 1-14 0h2zm5 9v-2h2v2h2v2H9v-2h2z"
+              />
+            </svg>
+          </button>
+          <div class="demo-hint" id="demoHint">
+            <strong id="hintTitle">Mic dabao aur bolo</strong>
+            <span id="hintSub"
+              >Hindi ya Hinglish mein — Kanpur, Ahmedabad, Rajkot, Surat</span
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <section class="section" id="features">
+      <div class="section-tag" data-en="Features" data-hi="Features">
+        Features
+      </div>
+      <h2
+        data-en="What no human agent<br>can match"
+        data-hi="Jo koi agent nahi<br>kar sakta"
+      >
+        Jo koi agent nahi<br />kar sakta
+      </h2>
+      <p
+        class="section-sub"
+        data-en="24 hours, 7 days — no breaks, no overtime. Your travel office never closes."
+        data-hi="24 ghante, 7 din — bina break, bina overtime. Aapka travel office kabhi band nahi hoga."
+      >
+        24 ghante, 7 din — bina break, bina overtime. Aapka travel office kabhi
+        band nahi hoga.
+      </p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎙️</div>
+          <div
+            class="feature-title"
+            data-en="Hindi Voice Understanding"
+            data-hi="Hindi Voice Samajhta Hai"
+          >
+            Hindi Voice Samajhta Hai
+          </div>
+          <div
+            class="feature-desc"
+            data-en="Kanpur, Jhansi, Orai, Ahmedabad — understands even wrong pronunciations. Say 'Kanpore' or 'Kanpur', doesn't matter."
+            data-hi="Kanpur, Jhansi, Orai, Ahmedabad — galat pronunciation bhi samajhta hai. 'Kanpore' bolo ya 'Kanpur', fark nahi padta."
+          >
+            Kanpur, Jhansi, Orai, Ahmedabad — galat pronunciation bhi samajhta
+            hai. 'Kanpore' bolo ya 'Kanpur', fark nahi padta.
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <div
+            class="feature-title"
+            data-en="Smart Upselling"
+            data-hi="Smart Conversation"
+          >
+            Smart Conversation
+          </div>
+          <div
+            class="feature-desc"
+            data-en="Upsells from seat to sleeper. Recommends single sleeper for female passengers. Handles price negotiation."
+            data-hi="Seat se sleeper tak upsell karta hai. Female passengers ke liye single sleeper suggest karta hai. Price negotiation bhi handle karta hai."
+          >
+            Seat se sleeper tak upsell karta hai. Female passengers ke liye
+            single sleeper suggest karta hai. Price negotiation bhi handle karta
+            hai.
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🕐</div>
+          <div
+            class="feature-title"
+            data-en="Always On"
+            data-hi="24/7 Available"
+          >
+            24/7 Available
+          </div>
+          <div
+            class="feature-desc"
+            data-en="A 2 AM call won't go unanswered. Not a single passenger lost to a missed call."
+            data-hi="Raat 2 baje ka call bhi miss nahi hoga. Ek bhi passenger nahi khoega missed call ki wajah se."
+          >
+            Raat 2 baje ka call bhi miss nahi hoga. Ek bhi passenger nahi khoega
+            missed call ki wajah se.
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📍</div>
+          <div
+            class="feature-title"
+            data-en="Route Intelligence"
+            data-hi="Route Intelligence"
+          >
+            Route Intelligence
+          </div>
+          <div
+            class="feature-desc"
+            data-en="Automatically connects nearby cities to the nearest hub. Gwalior to Jhansi, Vadodara to Ahmedabad — suggests on its own."
+            data-hi="Nearby cities automatically nearest hub se connect karta hai. Gwalior se Jhansi, Vadodara se Ahmedabad — khud suggest karta hai."
+          >
+            Nearby cities automatically nearest hub se connect karta hai.
+            Gwalior se Jhansi, Vadodara se Ahmedabad — khud suggest karta hai.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <section class="section">
+      <div class="section-tag" data-en="How it works" data-hi="Process">
+        Process
+      </div>
+      <h2 data-en="Simple as a phone call" data-hi="Ek call jitna simple">
+        Ek call jitna simple
+      </h2>
+      <p
+        class="section-sub"
+        data-en="Passenger calls. ramesh picks up. That's the whole product."
+        data-hi="Passenger call karta hai, ramesh uthata hai. Itna simple."
+      >
+        Passenger call karta hai, ramesh uthata hai. Itna simple.
+      </p>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <div
+            class="step-title"
+            data-en="Passenger calls"
+            data-hi="Passenger calls"
+          >
+            Passenger calls
+          </div>
+          <div
+            class="step-desc"
+            data-en="Dials your travel office number, any time of day."
+            data-hi="Aapke travel office ka number dial karta hai, kisi bhi waqt."
+          >
+            Aapke travel office ka number dial karta hai, kisi bhi waqt.
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <div
+            class="step-title"
+            data-en="ramesh answers"
+            data-hi="ramesh uthata hai"
+          >
+            ramesh uthata hai
+          </div>
+          <div
+            class="step-desc"
+            data-en="Greets in Hindi within 2 seconds. Natural, friendly tone."
+            data-hi="2 second mein Hindi mein greet karta hai. Natural lagta hai."
+          >
+            2 second mein Hindi mein greet karta hai. Natural lagta hai.
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <div
+            class="step-title"
+            data-en="Collects details"
+            data-hi="Details leta hai"
+          >
+            Details leta hai
+          </div>
+          <div
+            class="step-desc"
+            data-en="Route, date, passengers, seat type — one question at a time."
+            data-hi="Route, date, passengers, seat type — ek ek karke poochta hai."
+          >
+            Route, date, passengers, seat type — ek ek karke poochta hai.
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">4</div>
+          <div
+            class="step-title"
+            data-en="Booking confirmed"
+            data-hi="Booking confirm"
+          >
+            Booking confirm
+          </div>
+          <div
+            class="step-desc"
+            data-en="Guides to payment and confirms the booking."
+            data-hi="Payment process guide karta hai aur booking confirm karta hai."
+          >
+            Payment process guide karta hai aur booking confirm karta hai.
+          </div>
+        </div>
+      </div>
+      <div class="route-bar">
+        <div>
+          <div
+            class="route-label"
+            data-en="Active Routes"
+            data-hi="Active Routes"
+          >
+            Active Routes
+          </div>
+          <div class="route-cities">
+            <span class="city-chip">Kanpur</span
+            ><span class="route-arrow">→</span>
+            <span class="city-chip">Orai</span
+            ><span class="route-arrow">→</span>
+            <span class="city-chip">Jhansi</span
+            ><span class="route-arrow">→</span>
+            <span class="city-chip">Ahmedabad</span>
+            <span class="city-chip">Rajkot</span>
+            <span class="city-chip">Surat</span>
+          </div>
+        </div>
+        <div
+          class="route-note"
+          data-en="More routes can be added. Contact us for custom routes."
+          data-hi="Aur routes bhi add ho sakte hain. Custom routes ke liye contact karo."
+        >
+          Aur routes bhi add ho sakte hain. Custom routes ke liye contact karo.
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>VoiceBook · AI-Powered Bus Booking Agent · Made in India 🇮🇳</p>
+    </footer>
+
+    <script>
+      const SYSTEM_PROMPT = `Tu "ramesh" hai, ek friendly inbound travel ticketing agent.
+LANGUAGE: Simple Hindi ya Hinglish. Chhote sentences. Friendly tone.
+Amount Hindi mein: 1000=ek hazaar, 1200=barah so, 2000=do hazaar, 2500=pachchees so.
+FLOW:
+1) Pickup poochh (valid: Kanpur, Orai, Jhansi)
+2) Destination poochh (valid: Ahmedabad, Rajkot, Surat)
+3) Passengers kitne
+4) Route validate, nearby cities ke liye nearest hub suggest karo
+5) Pricing: Ahmedabad=1000, Rajkot/Surat=1200. NOP>1 toh sleeper upsell.
+   Female toh single sleeper: 2500->2300->2100->2000 (floor).
+   NOP>2 double sleeper: 4500 for 4 pax.
+6) Confirm karo. YES toh payment guide. NO toh ek baar convince.
+ASR: Fuzzy input samjho. "Rahi"=Orai, "Jansi"=Jhansi, "Kanpore"=Kanpur, "Amdabad"=Ahmedabad.
+Seedha reject mat karo, pehle confirm karo.
+CONSTRAINTS: 2-3 sentence max. Ek sawaal ek baar. Card details mat maango.`;
+
+      let apiKey = localStorage.getItem("vb_groq_key") || "";
+      let history = [
+        {
+          role: "assistant",
+          content:
+            "Namaste! Main ramesh hoon, aapka bus booking agent. Aap kahan se travel karna chahte ho?",
+        },
+      ];
+      let recognition = null,
+        isListening = false,
+        isSpeaking = false,
+        currentLang = "hi";
+
+      const micBtn = document.getElementById("micBtn");
+      const apiSetup = document.getElementById("apiSetup");
+      const apiKeyInput = document.getElementById("apiKeyInput");
+      const chatMessages = document.getElementById("chatMessages");
+
+      if (apiKey) apiKeyInput.value = apiKey;
+      if (
+        !("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+      )
+        document.getElementById("browserNote").style.display = "block";
+
+      function setLang(lang) {
+        currentLang = lang;
+        document
+          .getElementById("btnEn")
+          .classList.toggle("active", lang === "en");
+        document
+          .getElementById("btnHi")
+          .classList.toggle("active", lang === "hi");
+        document.querySelectorAll("[data-en][data-hi]").forEach((el) => {
+          const val = el.getAttribute("data-" + lang);
+          if (el.tagName === "H1" || el.tagName === "H2") el.innerHTML = val;
+          else el.textContent = val;
+        });
+        setMicState("idle");
+      }
+
+      function toggleApiSetup() {
+        const vis = apiSetup.style.display === "flex";
+        apiSetup.style.display = vis ? "none" : "flex";
+        if (!vis) apiKeyInput.focus();
+      }
+
+      function saveApiKey() {
+        const val = apiKeyInput.value.trim();
+        if (!val) return;
+        apiKey = val;
+        localStorage.setItem("vb_groq_key", apiKey);
+        apiSetup.style.display = "none";
+        addMessage("agent", "API key save ho gaya! Mic dabao aur bolo.");
+      }
+
+      function addMessage(role, text) {
+        const div = document.createElement("div");
+        div.className = "msg msg-" + role;
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function addThinking() {
+        const div = document.createElement("div");
+        div.className = "msg msg-thinking";
+        div.id = "thinkingMsg";
+        div.textContent = "Soch raha hai...";
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function removeThinking() {
+        const el = document.getElementById("thinkingMsg");
+        if (el) el.remove();
+      }
+
+      function setMicState(state) {
+        micBtn.className = "mic-btn";
+        const title = document.getElementById("hintTitle");
+        const sub = document.getElementById("hintSub");
+        const hi = currentLang === "hi";
+        if (state === "listening") {
+          micBtn.classList.add("listening");
+          title.textContent = hi ? "Sun raha hai..." : "Listening...";
+          sub.textContent = hi
+            ? "5-6 seconds mein bolo"
+            : "Speak now, 5-6 seconds";
+        } else if (state === "speaking") {
+          micBtn.classList.add("speaking");
+          title.textContent = hi
+            ? "ramesh bol raha hai..."
+            : "ramesh is speaking...";
+          sub.textContent = hi ? "Wait karo" : "Please wait";
+        } else {
+          title.textContent = hi ? "Mic dabao aur bolo" : "Press mic and speak";
+          sub.textContent = hi
+            ? "Hindi ya Hinglish mein — Kanpur, Ahmedabad, Rajkot, Surat"
+            : "Hindi or Hinglish — Kanpur, Ahmedabad, Rajkot, Surat";
+        }
+      }
+
+      async function getAgentResponse(userText) {
+        if (!apiKey) {
+          toggleApiSetup();
+          return;
+        }
+        history.push({ role: "user", content: userText });
+        addThinking();
+        try {
+          const res = await fetch(
+            "https://api.groq.com/openai/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + apiKey,
+              },
+              body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                max_tokens: 200,
+                messages: [
+                  { role: "system", content: SYSTEM_PROMPT },
+                  ...history,
+                ],
+              }),
+            },
+          );
+          const data = await res.json();
+          removeThinking();
+          if (data.error) {
+            addMessage("agent", "Error: " + data.error.message);
+            return;
+          }
+          const text = data.choices[0].message.content;
+          history.push({ role: "assistant", content: text });
+          addMessage("agent", text);
+          speakText(text);
+        } catch (err) {
+          removeThinking();
+          addMessage("agent", "Connection error. Internet check karo.");
+        }
+      }
+
+      function speakText(text) {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "hi-IN";
+        utter.rate = 0.88;
+        utter.pitch = 0.6;
+        const voices = speechSynthesis.getVoices();
+        const male = voices.find(
+          (v) =>
+            (v.lang === "hi-IN" || v.lang.startsWith("hi")) &&
+            !v.name.toLowerCase().includes("kalpana") &&
+            !v.name.toLowerCase().includes("female"),
+        );
+        const hindi = voices.find(
+          (v) => v.lang === "hi-IN" || v.lang.startsWith("hi"),
+        );
+        if (male) utter.voice = male;
+        else if (hindi) utter.voice = hindi;
+        utter.onstart = () => {
+          isSpeaking = true;
+          setMicState("speaking");
+        };
+        utter.onend = () => {
+          isSpeaking = false;
+          setMicState("idle");
+        };
+        utter.onerror = () => {
+          isSpeaking = false;
+          setMicState("idle");
+        };
+        speechSynthesis.speak(utter);
+      }
+
+      function toggleMic() {
+        if (!apiKey) {
+          console.log("no api key");
+          toggleApiSetup();
+          return;
+        }
+        if (isSpeaking) {
+          console.log("speaking");
+          window.speechSynthesis.cancel();
+          isSpeaking = false;
+        }
+        if (isListening) {
+          console.log("listening");
+          stopListening();
+          return;
+        }
+        startListening();
+      }
+
+      function startListening() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return;
+        recognition = new SR();
+        recognition.lang = "hi-IN";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        recognition.onstart = () => {
+          isListening = true;
+          setMicState("listening");
+        };
+        recognition.onresult = (e) => {
+          const t = e.results[0][0].transcript.trim();
+          if (t) {
+            addMessage("user", t);
+            getAgentResponse(t);
+          }
+        };
+        recognition.onerror = (e) => {
+          isListening = false;
+          setMicState("idle");
+          if (e.error !== "no-speech")
+            addMessage("agent", "Mic error: " + e.error);
+        };
+        recognition.onend = () => {
+          isListening = false;
+          setMicState("idle");
+        };
+        recognition.start();
+      }
+
+      function stopListening() {
+        if (recognition) recognition.stop();
+        isListening = false;
+        setMicState("idle");
+      }
+      speechSynthesis.onvoiceschanged = () => {};
+    </script>
+  </body>
+</html>
