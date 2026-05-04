@@ -749,40 +749,42 @@
         <div class="demo-header">
           <div class="demo-avatar">PB</div>
           <div>
-            <div class="demo-agent-name">ramesh</div>
+            <div class="demo-agent-name">Pappu Bhai</div>
             <div class="demo-agent-status">
               <span class="status-dot"></span> AI Booking Agent · Hindi /
               Hinglish
             </div>
           </div>
-          <button class="key-btn" onclick="toggleApiSetup()">
+          <button class="key-btn" onclick="toggleSettings()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2a5 5 0 1 1 0-10 5 5 0 0 1 0 10zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"
-              />
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2a5 5 0 1 1 0-10 5 5 0 0 1 0 10zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/>
             </svg>
-            API Key
+            Server
           </button>
         </div>
 
-        <div class="browser-note" id="browserNote">
-          ⚠️ Voice sirf Chrome mein kaam karta hai.
+        <div class="browser-note" id="browserNote" style="display:none">
+          ⚠️ Mic access ke liye HTTPS ya localhost zaroori hai.
         </div>
 
         <div class="api-setup" id="apiSetup">
-          <input
-            type="password"
-            class="api-input"
-            id="apiKeyInput"
-            placeholder="Groq API key (gsk_...)"
-          />
-          <button class="api-save-btn" onclick="saveApiKey()">Save</button>
+          <div style="width:100%">
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;">Backend Server URL</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+              <input type="text" class="api-input" id="backendUrlInput" placeholder="http://localhost:8000" style="flex:1"/>
+              <button class="api-save-btn" onclick="saveBackendUrl()">Connect</button>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button onclick="setPreset('http://localhost:8000')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:5px;padding:4px 10px;color:rgba(255,255,255,0.6);font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;">localhost</button>
+              <button onclick="setPreset('https://')" style="background:rgba(232,160,32,0.15);border:1px solid rgba(232,160,32,0.3);border-radius:5px;padding:4px 10px;color:#E8A020;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;">Railway URL</button>
+              <button onclick="setPreset('https://')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:5px;padding:4px 10px;color:rgba(255,255,255,0.6);font-size:11px;cursor:pointer;font-family:Outfit,sans-serif;">Vercel URL</button>
+            </div>
+            <div id="serverStatus" style="font-size:11px;margin-top:8px;color:rgba(255,255,255,0.35);"></div>
+          </div>
         </div>
 
         <div class="chat-messages" id="chatMessages">
           <div class="msg msg-agent">
-            Namaste! Main ramesh hoon, aapka bus booking agent. Aap kahan se
-            travel karna chahte ho?
           </div>
         </div>
 
@@ -912,10 +914,10 @@
       </h2>
       <p
         class="section-sub"
-        data-en="Passenger calls. ramesh picks up. That's the whole product."
-        data-hi="Passenger call karta hai, ramesh uthata hai. Itna simple."
+        data-en="Passenger calls. Pappu Bhai picks up. That's the whole product."
+        data-hi="Passenger call karta hai, Pappu Bhai uthata hai. Itna simple."
       >
-        Passenger call karta hai, ramesh uthata hai. Itna simple.
+        Passenger call karta hai, Pappu Bhai uthata hai. Itna simple.
       </p>
       <div class="how-grid">
         <div class="how-step">
@@ -939,10 +941,10 @@
           <div class="step-num">2</div>
           <div
             class="step-title"
-            data-en="ramesh answers"
-            data-hi="ramesh uthata hai"
+            data-en="Pappu Bhai answers"
+            data-hi="Pappu Bhai uthata hai"
           >
-            ramesh uthata hai
+            Pappu Bhai uthata hai
           </div>
           <div
             class="step-desc"
@@ -1023,256 +1025,228 @@
     </footer>
 
     <script>
-      const SYSTEM_PROMPT = `Tu "ramesh" hai, ek friendly inbound travel ticketing agent.
-LANGUAGE: Simple Hindi ya Hinglish. Chhote sentences. Friendly tone.
-Amount Hindi mein: 1000=ek hazaar, 1200=barah so, 2000=do hazaar, 2500=pachchees so.
-FLOW:
-1) Pickup poochh (valid: Kanpur, Orai, Jhansi)
-2) Destination poochh (valid: Ahmedabad, Rajkot, Surat)
-3) Passengers kitne
-4) Route validate, nearby cities ke liye nearest hub suggest karo
-5) Pricing: Ahmedabad=1000, Rajkot/Surat=1200. NOP>1 toh sleeper upsell.
-   Female toh single sleeper: 2500->2300->2100->2000 (floor).
-   NOP>2 double sleeper: 4500 for 4 pax.
-6) Confirm karo. YES toh payment guide. NO toh ek baar convince.
-ASR: Fuzzy input samjho. "Rahi"=Orai, "Jansi"=Jhansi, "Kanpore"=Kanpur, "Amdabad"=Ahmedabad.
-Seedha reject mat karo, pehle confirm karo.
-CONSTRAINTS: 2-3 sentence max. Ek sawaal ek baar. Card details mat maango.`;
+      // ── Backend URL — set via settings panel or defaults to localhost ──
+      let BACKEND_URL = localStorage.getItem('vb_backend_url') || 'http://localhost:8000';
 
-      let apiKey = localStorage.getItem("vb_groq_key") || "";
-      let history = [
-        {
-          role: "assistant",
-          content:
-            "Namaste! Main ramesh hoon, aapka bus booking agent. Aap kahan se travel karna chahte ho?",
-        },
-      ];
-      let recognition = null,
-        isListening = false,
-        isSpeaking = false,
-        currentLang = "hi";
+      let sessionId = null;
+      let mediaRecorder = null;
+      let audioChunks = [];
+      let isListening = false;
+      let isSpeaking = false;
+      let currentLang = 'hi';
 
-      const micBtn = document.getElementById("micBtn");
-      const apiSetup = document.getElementById("apiSetup");
-      const apiKeyInput = document.getElementById("apiKeyInput");
-      const chatMessages = document.getElementById("chatMessages");
+      const micBtn = document.getElementById('micBtn');
+      const apiSetup = document.getElementById('apiSetup');
+      const chatMessages = document.getElementById('chatMessages');
 
-      if (apiKey) apiKeyInput.value = apiKey;
-      if (
-        !("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
-      )
-        document.getElementById("browserNote").style.display = "block";
+      // ── On load ──
+      window.addEventListener('load', async () => {
+        document.getElementById('backendUrlInput').value = BACKEND_URL;
+        await startSession();
+      });
 
+      // ── Settings panel ──
+      function toggleSettings() {
+        const vis = apiSetup.style.display === 'flex';
+        apiSetup.style.display = vis ? 'none' : 'flex';
+        if (!vis) document.getElementById('backendUrlInput').focus();
+      }
+
+      function setPreset(url) {
+        document.getElementById('backendUrlInput').value = url;
+        document.getElementById('backendUrlInput').focus();
+      }
+
+      async function saveBackendUrl() {
+        const val = document.getElementById('backendUrlInput').value.trim().replace(/\/$/, '');
+        if (!val) return;
+        const statusEl = document.getElementById('serverStatus');
+        statusEl.textContent = 'Connecting...';
+        try {
+          const res = await fetch(`${val}/`);
+          const data = await res.json();
+          BACKEND_URL = val;
+          localStorage.setItem('vb_backend_url', BACKEND_URL);
+          statusEl.style.color = '#4CAF50';
+          statusEl.textContent = '✓ Connected — ' + (data.status || 'Server online');
+          setTimeout(() => { apiSetup.style.display = 'none'; }, 1200);
+          // Restart session with new URL
+          chatMessages.innerHTML = '';
+          await startSession();
+        } catch (err) {
+          statusEl.style.color = '#e74c3c';
+          statusEl.textContent = '✗ Could not reach server. URL sahi hai?';
+        }
+      }
+
+      // ── Session management ──
+      async function startSession() {
+        try {
+          const res = await fetch(`${BACKEND_URL}/session`);
+          const data = await res.json();
+          sessionId = data.session_id;
+          await playGreeting();
+        } catch (err) {
+          addMessage('agent', 'Server connect nahi ho pa raha. Settings (⚙) mein server URL check karo.');
+        }
+      }
+
+      async function playGreeting() {
+        try {
+          setMicState('speaking');
+          const res = await fetch(`${BACKEND_URL}/greeting/${sessionId}`);
+          if (!res.ok) throw new Error('Greeting failed');
+          // Show greeting text
+          addMessage('agent', 'Namaste! Main Pappu Bhai hoon, aapka bus booking agent. Aap kahan se travel karna chahte ho?');
+          const blob = await res.blob();
+          await playAudioBlob(blob);
+        } catch (err) {
+          setMicState('idle');
+          console.error('Greeting error:', err);
+        }
+      }
+
+      // ── Language toggle ──
       function setLang(lang) {
         currentLang = lang;
-        document
-          .getElementById("btnEn")
-          .classList.toggle("active", lang === "en");
-        document
-          .getElementById("btnHi")
-          .classList.toggle("active", lang === "hi");
-        document.querySelectorAll("[data-en][data-hi]").forEach((el) => {
-          const val = el.getAttribute("data-" + lang);
-          if (el.tagName === "H1" || el.tagName === "H2") el.innerHTML = val;
+        document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+        document.getElementById('btnHi').classList.toggle('active', lang === 'hi');
+        document.querySelectorAll('[data-en][data-hi]').forEach((el) => {
+          const val = el.getAttribute('data-' + lang);
+          if (el.tagName === 'H1' || el.tagName === 'H2') el.innerHTML = val;
           else el.textContent = val;
         });
-        setMicState("idle");
+        setMicState('idle');
       }
 
-      function toggleApiSetup() {
-        const vis = apiSetup.style.display === "flex";
-        apiSetup.style.display = vis ? "none" : "flex";
-        if (!vis) apiKeyInput.focus();
-      }
-
-      function saveApiKey() {
-        const val = apiKeyInput.value.trim();
-        if (!val) return;
-        apiKey = val;
-        localStorage.setItem("vb_groq_key", apiKey);
-        apiSetup.style.display = "none";
-        addMessage("agent", "API key save ho gaya! Mic dabao aur bolo.");
-      }
-
+      // ── Chat messages ──
       function addMessage(role, text) {
-        const div = document.createElement("div");
-        div.className = "msg msg-" + role;
+        const div = document.createElement('div');
+        div.className = 'msg msg-' + role;
         div.textContent = text;
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
       function addThinking() {
-        const div = document.createElement("div");
-        div.className = "msg msg-thinking";
-        div.id = "thinkingMsg";
-        div.textContent = "Soch raha hai...";
+        const div = document.createElement('div');
+        div.className = 'msg msg-thinking';
+        div.id = 'thinkingMsg';
+        div.textContent = 'Soch raha hai...';
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
       function removeThinking() {
-        const el = document.getElementById("thinkingMsg");
+        const el = document.getElementById('thinkingMsg');
         if (el) el.remove();
       }
 
+      // ── Mic state UI ──
       function setMicState(state) {
-        micBtn.className = "mic-btn";
-        const title = document.getElementById("hintTitle");
-        const sub = document.getElementById("hintSub");
-        const hi = currentLang === "hi";
-        if (state === "listening") {
-          micBtn.classList.add("listening");
-          title.textContent = hi ? "Sun raha hai..." : "Listening...";
-          sub.textContent = hi
-            ? "5-6 seconds mein bolo"
-            : "Speak now, 5-6 seconds";
-        } else if (state === "speaking") {
-          micBtn.classList.add("speaking");
-          title.textContent = hi
-            ? "ramesh bol raha hai..."
-            : "ramesh is speaking...";
-          sub.textContent = hi ? "Wait karo" : "Please wait";
+        micBtn.className = 'mic-btn';
+        const title = document.getElementById('hintTitle');
+        const sub = document.getElementById('hintSub');
+        const hi = currentLang === 'hi';
+        if (state === 'listening') {
+          micBtn.classList.add('listening');
+          title.textContent = hi ? 'Sun raha hai...' : 'Listening...';
+          sub.textContent = hi ? 'Baat karo, phir dobara dabao' : 'Speak, then press again to stop';
+        } else if (state === 'speaking') {
+          micBtn.classList.add('speaking');
+          title.textContent = hi ? 'Pappu Bhai bol raha hai...' : 'Pappu Bhai is speaking...';
+          sub.textContent = hi ? 'Wait karo' : 'Please wait';
+        } else if (state === 'processing') {
+          micBtn.classList.add('speaking');
+          title.textContent = hi ? 'Samajh raha hai...' : 'Processing...';
+          sub.textContent = hi ? 'Ek second...' : 'One moment...';
         } else {
-          title.textContent = hi ? "Mic dabao aur bolo" : "Press mic and speak";
+          title.textContent = hi ? 'Mic dabao aur bolo' : 'Press mic and speak';
           sub.textContent = hi
-            ? "Hindi ya Hinglish mein — Kanpur, Ahmedabad, Rajkot, Surat"
-            : "Hindi or Hinglish — Kanpur, Ahmedabad, Rajkot, Surat";
+            ? 'Hindi ya Hinglish mein — Kanpur, Ahmedabad, Rajkot, Surat'
+            : 'Hindi or Hinglish — Kanpur, Ahmedabad, Rajkot, Surat';
         }
       }
 
-      async function getAgentResponse(userText) {
-        if (!apiKey) {
-          toggleApiSetup();
-          return;
+      // ── Recording ──
+      async function toggleMic() {
+        if (isSpeaking) return;
+        if (isListening) { stopRecording(); return; }
+        await startRecording();
+      }
+
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioChunks = [];
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+          mediaRecorder = new MediaRecorder(stream, { mimeType });
+          mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach((t) => t.stop());
+            const blob = new Blob(audioChunks, { type: mimeType });
+            await sendAudio(blob);
+          };
+          mediaRecorder.start();
+          isListening = true;
+          setMicState('listening');
+        } catch (err) {
+          addMessage('agent', 'Mic access nahi mila. Browser permissions check karo.');
         }
-        history.push({ role: "user", content: userText });
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        isListening = false;
+        setMicState('processing');
+      }
+
+      // ── Send to backend, get MP3 ──
+      async function sendAudio(audioBlob) {
+        if (!sessionId) { addMessage('agent', 'Session nahi mili. Page refresh karo.'); return; }
         addThinking();
         try {
-          const res = await fetch(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + apiKey,
-              },
-              body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                max_tokens: 200,
-                messages: [
-                  { role: "system", content: SYSTEM_PROMPT },
-                  ...history,
-                ],
-              }),
-            },
-          );
-          const data = await res.json();
-          removeThinking();
-          if (data.error) {
-            addMessage("agent", "Error: " + data.error.message);
-            return;
+          const form = new FormData();
+          form.append('audio', audioBlob, 'recording.webm');
+          const res = await fetch(`${BACKEND_URL}/chat/${sessionId}`, {
+            method: 'POST',
+            body: form,
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `Server error ${res.status}`);
           }
-          const text = data.choices[0].message.content;
-          history.push({ role: "assistant", content: text });
-          addMessage("agent", text);
-          speakText(text);
+          const userText  = decodeHeader(res.headers.get('X-User-Text'));
+          const agentText = decodeHeader(res.headers.get('X-Agent-Text'));
+          removeThinking();
+          if (userText)  addMessage('user', userText);
+          if (agentText) addMessage('agent', agentText);
+          const mp3 = await res.blob();
+          await playAudioBlob(mp3);
         } catch (err) {
           removeThinking();
-          addMessage("agent", "Connection error. Internet check karo.");
+          addMessage('agent', 'Error: ' + err.message);
+          setMicState('idle');
         }
       }
 
-      function speakText(text) {
-        if (!window.speechSynthesis) return;
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = "hi-IN";
-        utter.rate = 0.88;
-        utter.pitch = 0.6;
-        const voices = speechSynthesis.getVoices();
-        const male = voices.find(
-          (v) =>
-            (v.lang === "hi-IN" || v.lang.startsWith("hi")) &&
-            !v.name.toLowerCase().includes("kalpana") &&
-            !v.name.toLowerCase().includes("female"),
-        );
-        const hindi = voices.find(
-          (v) => v.lang === "hi-IN" || v.lang.startsWith("hi"),
-        );
-        if (male) utter.voice = male;
-        else if (hindi) utter.voice = hindi;
-        utter.onstart = () => {
+      // ── Play audio blob ──
+      async function playAudioBlob(blob) {
+        return new Promise((resolve) => {
           isSpeaking = true;
-          setMicState("speaking");
-        };
-        utter.onend = () => {
-          isSpeaking = false;
-          setMicState("idle");
-        };
-        utter.onerror = () => {
-          isSpeaking = false;
-          setMicState("idle");
-        };
-        speechSynthesis.speak(utter);
+          setMicState('speaking');
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.onended = () => { isSpeaking = false; URL.revokeObjectURL(url); setMicState('idle'); resolve(); };
+          audio.onerror = () => { isSpeaking = false; setMicState('idle'); resolve(); };
+          audio.play().catch(() => { isSpeaking = false; setMicState('idle'); resolve(); });
+        });
       }
 
-      function toggleMic() {
-        if (!apiKey) {
-          console.log("no api key");
-          toggleApiSetup();
-          return;
-        }
-        if (isSpeaking) {
-          console.log("speaking");
-          window.speechSynthesis.cancel();
-          isSpeaking = false;
-        }
-        if (isListening) {
-          console.log("listening");
-          stopListening();
-          return;
-        }
-        startListening();
+      function decodeHeader(val) {
+        if (!val) return '';
+        try { return decodeURIComponent(escape(val)); } catch { return val; }
       }
-
-      function startListening() {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) return;
-        recognition = new SR();
-        recognition.lang = "hi-IN";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        recognition.onstart = () => {
-          isListening = true;
-          setMicState("listening");
-        };
-        recognition.onresult = (e) => {
-          const t = e.results[0][0].transcript.trim();
-          if (t) {
-            addMessage("user", t);
-            getAgentResponse(t);
-          }
-        };
-        recognition.onerror = (e) => {
-          isListening = false;
-          setMicState("idle");
-          if (e.error !== "no-speech")
-            addMessage("agent", "Mic error: " + e.error);
-        };
-        recognition.onend = () => {
-          isListening = false;
-          setMicState("idle");
-        };
-        recognition.start();
-      }
-
-      function stopListening() {
-        if (recognition) recognition.stop();
-        isListening = false;
-        setMicState("idle");
-      }
-      speechSynthesis.onvoiceschanged = () => {};
     </script>
   </body>
 </html>

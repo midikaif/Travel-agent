@@ -3,20 +3,32 @@ import tempfile
 import uuid
 import json
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from groq import Groq
-from gtts import gTTS
+from elevenlabs.client import ElevenLabs
+from elevenlabs import save
 import numpy as np
 import scipy.io.wavfile as wav
 import redis
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+
 # ── Config ──────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-REDIS_URL = os.getenv("REDIS_URL", None)
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+REDIS_URL = ""
+# os.getenv("REDIS_URL", "")
+
+ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "TX3LPaxmHKxFdv7VOQHJ")
+
+# ── Constants ───────────────────────────────────────────
 
 SYSTEM_PROMPT = """
 Tu "ramesh" hai, ek friendly inbound travel ticketing agent.
@@ -59,31 +71,54 @@ else:
     sessions: dict[str, list] = {}
     r = None
 
-client = Groq(api_key=GROQ_API_KEY)
+llm = Groq(api_key=GROQ_API_KEY)
+lab_tts = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+
 
 # ── App ─────────────────────────────────────────────────
 app = FastAPI(title="ramesh Voice Agent API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        # tighten this when you go to production
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-User-Text", "X-Agent-Text"],
 )
 
 
 # ── Helpers ─────────────────────────────────────────────
 
-def amplify_audio(audio: np.ndarray, target: int = 20000) -> np.ndarray:
-    max_amp = np.abs(audio).max()
-    if 0 < max_amp < 10000:
-        audio = (audio * (target / max_amp)).astype(np.int16)
-    return audio
+def convert_to_wav(input_path: str) -> str:
+    """
+    Convert any audio format (webm, ogg, mp4) to WAV 16 kHz mono.
+    Browser MediaRecorder sends webm - Whisper needs WAV. Falls back gracefully if ffmpeg not available.
+    """
+    output_path = input_path.replace(".tmp", ".wav") + ".wav"
+    ret = os.system(f'ffmpeg -y -i "{input_path}" -ar 16000 -ac 1 -f wav "{output_path}" -loglevel quiet')
+
+    if ret == 0  and os.path.exists(output_path):
+        return output_path
+    # ffmpeg not available - return original and let Whisper try
+    return input_path
+
+def amplify_audio(audio_path: str) -> str:
+    """Boost low-volume WAV recordings before Whisper."""
+    try:
+        rate, data = wav.read(audio_path)
+        max_amp = np.abs(data).max()
+        if 0 < max_amp < 10000:
+            data = (data * (20000 / max_amp)).astype(np.int16)
+            wav.write(audio_path, rate, data)
+    except Exception:
+        pass
+    return audio_path
 
 
 def transcribe(audio_path: str) -> str:
     with open(audio_path, "rb") as f:
-        result = client.audio.transcriptions.create(
+        result = llm.audio.transcriptions.create(
             file=(audio_path, f.read()),
             model="whisper-large-v3",
             language="hi",
@@ -104,7 +139,7 @@ def get_llm_response(session_id: str, user_text: str) -> str:
     history.append({"role": "user", "content": user_text})
 
     # Get LLM response
-    response = client.chat.completions.create(
+    response = llm.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
         max_tokens=200,
@@ -127,16 +162,37 @@ def text_to_speech(text: str) -> str:
     """Convert text to speech, return path to MP3 file."""
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
     tmp.close()
-    tts = gTTS(text=text, lang="hi", slow=False)
-    tts.save(tmp.name)
+
+    # if ELEVENLABS_API_KEY:
+    try:
+        audio = lab_tts.text_to_speech.convert(
+            voice_id=ELEVENLABS_VOICE_ID,
+            text=text,
+            model_id="eleven_multilingual_v2",
+            output_format="mp3_44100_128",
+        )
+
+        save(audio, tmp.name)
+    except Exception as err:
+        #Fallback to gTTS if no Elevenlabs key
+        from gtts import gTTS
+        tts = gTTS(text=text, lang="hi", slow=False)
+        tts.save(tmp.name)
+    
     return tmp.name
 
 
 # ── Routes ──────────────────────────────────────────────
 
+@app.get("/demo", response_class=HTMLResponse)
+def demo():
+    with open("travel-agent-landing-page.html", "r", encoding="utf-8") as f:
+        return f.read()
+
 @app.get("/")
 def root():
-    return {"status": "ramesh is online 🚌"}
+    tts_engine = "ElevenLabs" if ELEVENLABS_API_KEY else "gTTS (fallback)"
+    return {"status": "ramesh is online 🚌", "tts_engine": tts_engine}
 
 
 @app.get("/session")
@@ -154,27 +210,28 @@ def new_session():
 async def chat(session_id: str, audio: UploadFile = File(...)):
     """
     Main endpoint. Accepts audio file, returns MP3 response.
-    Flow: audio -> Whisper STT -> Llama LLM -> gTTS -> MP3
+    Flow: audio -> covert to WAV -> amplify -> Whisper STT -> Llama LLM -> ElevenLabs TTs/gTTS -> MP3
     """
     # 1. Save uploaded audio to temp file
     audio_bytes = await audio.read()
-    tmp_in = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-    tmp_in.write(audio_bytes)
-    tmp_in.close()
+    
+    suffix = ".webm" if "webm" in (audio.content_type or "") else ".wav"
+    tmp_raw = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    tmp_raw.write(audio_bytes)
+    tmp_raw.close()
+
+    tmp_wav = None
+    mp3_path = None
 
     try:
-        # 2. Amplify if needed (handles low-volume mics)
-        try:
-            rate, data = wav.read(tmp_in.name)
-            data = amplify_audio(data)
-            wav.write(tmp_in.name, rate, data)
-        except Exception:
-            pass  # if amplification fails, send as-is
 
-        # 3. Transcribe with Groq Whisper
-        user_text = transcribe(tmp_in.name)
+        tmp_wav = convert_to_wav(tmp_raw.name)
+        amplify_audio(tmp_wav)
+        
+        #Transcribe
+        user_text = transcribe(tmp_wav)
         if not user_text:
-            raise HTTPException(status_code=400, detail="Could not transcribe audio")
+            raise HTTPException(status_code=400, detail="Awaaz nahi aayi — please dobara bolo")
 
         # 4. Get LLM response
         reply_text = get_llm_response(session_id, user_text)
@@ -189,12 +246,20 @@ async def chat(session_id: str, audio: UploadFile = File(...)):
             headers={
                 "X-User-Text": user_text.encode("utf-8").decode("latin-1", errors="replace"),
                 "X-Agent-Text": reply_text.encode("utf-8").decode("latin-1", errors="replace"),
+                "Access-Control_Expose-Headers":
+                "X-User-Text, X-Agent_Text",
             },
-            background=None,
+           
         )
 
     finally:
-        os.unlink(tmp_in.name)
+        # Clean up temp files
+        for path in [tmp_raw.name, tmp_wav]:
+            if path and path != tmp_raw.name and os.path.exists(path):
+                try: os.unlink(path)
+                except: pass
+        try: os.unlink(tmp_raw.name)
+        except: pass
 
 
 @app.delete("/session/{session_id}")
