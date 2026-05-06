@@ -1102,7 +1102,7 @@
     <script>
       // ── Backend URL — set via settings panel or defaults to localhost ──
       let BACKEND_URL =
-        localStorage.getItem("vb_backend_url") || "http://localhost:8080/api";
+        "https://travel-agent-chi-teal.vercel.app/api";
 
       let sessionId = null;
       let mediaRecorder = null;
@@ -1133,35 +1133,36 @@
         document.getElementById("backendUrlInput").focus();
       }
 
-      async function saveBackendUrl() {
-        const val = document
-          .getElementById("backendUrlInput")
-          .value.trim()
-          .replace(/\/$/, "");
-        if (!val) return;
-        const statusEl = document.getElementById("serverStatus");
-        statusEl.textContent = "Connecting...";
-        try {
-          const res = await fetch(`${val}/`);
-          const data = await res.json();
-          BACKEND_URL = val;
-          localStorage.setItem("vb_backend_url", BACKEND_URL);
-          statusEl.style.color = "#4CAF50";
-          statusEl.textContent =
-            "✓ Connected — " + (data.status || "Server online");
-          setTimeout(() => {
-            apiSetup.style.display = "none";
-          }, 1200);
-          // Restart session with new URL
-          chatMessages.innerHTML = "";
-          await startSession();
-        } catch (err) {
-          statusEl.style.color = "#e74c3c";
-          statusEl.textContent = "✗ Could not reach server. URL sahi hai?";
-        }
-      }
+      // async function saveBackendUrl() {
+      //   const val = document
+      //     .getElementById("backendUrlInput")
+      //     .value.trim()
+      //     .replace(/\/$/, "");
+      //   if (!val) return;
+      //   const statusEl = document.getElementById("serverStatus");
+      //   statusEl.textContent = "Connecting...";
+      //   try {
+      //     const res = await fetch(`${val}/`);
+      //     const data = await res.json();
+      //     BACKEND_URL = val;
+      //     localStorage.setItem("vb_backend_url", BACKEND_URL);
+      //     statusEl.style.color = "#4CAF50";
+      //     statusEl.textContent =
+      //       "✓ Connected — " + (data.status || "Server online");
+      //     setTimeout(() => {
+      //       apiSetup.style.display = "none";
+      //     }, 1200);
+      //     // Restart session with new URL
+      //     chatMessages.innerHTML = "";
+      //     await startSession();
+      //   } catch (err) {
+      //     statusEl.style.color = "#e74c3c";
+      //     statusEl.textContent = "✗ Could not reach server. URL sahi hai?";
+      //   }
+      // }
 
       // ── Session management ──
+      
       async function startSession() {
         try {
           const res = await fetch(`${BACKEND_URL}/session`);
