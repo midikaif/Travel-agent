@@ -1,3 +1,4 @@
+import base64
 import os
 import tempfile
 import uuid
@@ -11,22 +12,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from groq import Groq
-from elevenlabs.client import ElevenLabs
-from elevenlabs import save
+# from elevenlabs.client import ElevenLabs
+# from elevenlabs import save
+from sarvamai import SarvamAI
+from sarvamai.play import save
 import numpy as np
 import scipy.io.wavfile as wav
 import redis
-
+import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 
 # ── Config ──────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
 REDIS_URL = ""
 # os.getenv("REDIS_URL", "")
 
-ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "TX3LPaxmHKxFdv7VOQHJ")
+logger = logging.getLogger("__main__")
+
+
 
 # ── Constants ───────────────────────────────────────────
 
@@ -72,7 +77,7 @@ else:
     r = None
 
 llm = Groq(api_key=GROQ_API_KEY)
-lab_tts = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+lab_tts = SarvamAI(api_subscription_key=SARVAM_API_KEY)
 
 
 # ── App ─────────────────────────────────────────────────
@@ -158,23 +163,23 @@ def get_llm_response(session_id: str, user_text: str) -> str:
     return reply
 
 
-def text_to_speech(text: str) -> str:
+def text_to_speech(text: str):
     """Convert text to speech, return path to MP3 file."""
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
     tmp.close()
 
-    # if ELEVENLABS_API_KEY:
     try:
         audio = lab_tts.text_to_speech.convert(
-            voice_id=ELEVENLABS_VOICE_ID,
+            target_language_code="hi-IN",
             text=text,
-            model_id="eleven_multilingual_v2",
-            output_format="mp3_44100_128",
-        )
+            model="bulbul:v3",
+            speaker="shubh",
+            output_audio_codec="mp3"
+        )   
 
         save(audio, tmp.name)
     except Exception as err:
-        #Fallback to gTTS if no Elevenlabs key
+        #Fallback to gTTS
         from gtts import gTTS
         tts = gTTS(text=text, lang="hi", slow=False)
         tts.save(tmp.name)
@@ -191,7 +196,7 @@ def demo():
 
 @app.get("/")
 def root():
-    tts_engine = "ElevenLabs" if ELEVENLABS_API_KEY else "gTTS (fallback)"
+    tts_engine = "sarvamai" if ELEVENLABS_API_KEY else "gTTS (fallback)"
     return {"status": "ramesh is online 🚌", "tts_engine": tts_engine}
 
 
@@ -226,7 +231,7 @@ async def chat(session_id: str, audio: UploadFile = File(...)):
     try:
 
         tmp_wav = convert_to_wav(tmp_raw.name)
-        amplify_audio(tmp_wav)
+        # amplify_audio(tmp_wav)
         
         #Transcribe
         user_text = transcribe(tmp_wav)
@@ -278,11 +283,13 @@ def greeting(session_id: str):
     Get the opening greeting as audio.
     Call this when the page loads to play ramesh's intro.
     """
-    text = "Namaste! Main ramesh hoon, aapka bus booking agent. Aap kahan se travel karna chahte ho?"
+    text = "Namaste!"
     greeting_history = [{"role": "assistant", "content": text}]
     if r:
         r.setex(f"session:{session_id}", 86400, json.dumps(greeting_history))
     else:
         sessions[session_id] = greeting_history
     mp3_path = text_to_speech(text)
+    # audio_base64 = mp3_path.audios[0]
+    # audio_bytes = base64.b64decode(audio_base64)
     return FileResponse(mp3_path, media_type="audio/mpeg")

@@ -1026,7 +1026,7 @@
 
     <script>
       // ── Backend URL — set via settings panel or defaults to localhost ──
-      let BACKEND_URL = localStorage.getItem('vb_backend_url') || 'http://localhost:8000';
+      let BACKEND_URL = localStorage.getItem('vb_backend_url') || 'http://localhost:8080';
 
       let sessionId = null;
       let mediaRecorder = null;
@@ -1095,9 +1095,10 @@
         try {
           setMicState('speaking');
           const res = await fetch(`${BACKEND_URL}/greeting/${sessionId}`);
+          console.log(res);
           if (!res.ok) throw new Error('Greeting failed');
           // Show greeting text
-          addMessage('agent', 'Namaste! Main Pappu Bhai hoon, aapka bus booking agent. Aap kahan se travel karna chahte ho?');
+          addMessage('agent', 'Namaste! ?');
           const blob = await res.blob();
           await playAudioBlob(blob);
         } catch (err) {
