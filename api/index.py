@@ -1,27 +1,19 @@
-import base64
 import os
+import subprocess
 import tempfile
 import uuid
 import json
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
-load_dotenv()
-
+import subprocess
+import redis
+import logging
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.responses import FileResponse, HTMLResponse
 from groq import Groq
-# from elevenlabs.client import ElevenLabs
-# from elevenlabs import save
 from sarvamai import SarvamAI
 from sarvamai.play import save
 import numpy as np
 import scipy.io.wavfile as wav
-import redis
-import logging
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
 
 # ── Config ──────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
@@ -101,10 +93,15 @@ def convert_to_wav(input_path: str) -> str:
     Browser MediaRecorder sends webm - Whisper needs WAV. Falls back gracefully if ffmpeg not available.
     """
     output_path = input_path.replace(".tmp", ".wav") + ".wav"
-    ret = os.system(f'ffmpeg -y -i "{input_path}" -ar 16000 -ac 1 -f wav "{output_path}" -loglevel quiet')
-
-    if ret == 0  and os.path.exists(output_path):
-        return output_path
+    try:
+        ret = subprocess.run(
+            ["ffmpeg", "-y", "-i", input_path, "-ar", "16000", "-ac", "1", "-f", "wav", output_path, "-loglevel", "quiet"],
+            check=False
+        )
+        if ret.returncode == 0 and os.path.exists(output_path):
+            return output_path
+    except FileNotFoundError:
+        pass
     # ffmpeg not available - return original and let Whisper try
     return input_path
 
@@ -146,12 +143,12 @@ async def get_llm_response(session_id: str, user_text: str) -> str:
     # Get LLM response
     response = llm.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
+        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history, # type: ignore
         max_tokens=200,
     )
 
     # Add assistant response
-    reply = response.choices[0].message.content.strip()
+    reply = response.choices[0].message.content.strip() 
     history.append({"role": "assistant", "content": reply})
 
     # Save back to Redis or memory (TTL: 24 hours)
@@ -189,18 +186,18 @@ def text_to_speech(text: str):
 
 # ── Routes ──────────────────────────────────────────────
 
-@app.get("/demo", response_class=HTMLResponse)
+@app.get("/api/demo", response_class=HTMLResponse)
 def demo():
     with open("travel-agent-landing-page.html", "r", encoding="utf-8") as f:
         return f.read()
 
-@app.get("/")
+@app.get("/api/health")
 def root():
-    tts_engine = "sarvamai" if ELEVENLABS_API_KEY else "gTTS (fallback)"
+    tts_engine = "sarvamai" if SARVAM_API_KEY else "gTTS (fallback)"
     return {"status": "ramesh is online 🚌", "tts_engine": tts_engine}
 
 
-@app.get("/session")
+@app.get("/api/session")
 def new_session():
     """Create a new conversation session. Call this when a new user opens the page."""
     session_id = str(uuid.uuid4())
@@ -211,7 +208,7 @@ def new_session():
     return {"session_id": session_id}
 
 
-@app.post("/chat/{session_id}")
+@app.post("/api/chat/{session_id}")
 async def chat(session_id: str, audio: UploadFile = File(...)):
     """
     Main endpoint. Accepts audio file, returns MP3 response.
@@ -239,7 +236,7 @@ async def chat(session_id: str, audio: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Awaaz nahi aayi — please dobara bolo")
 
         # 4. Get LLM response
-        reply_text = get_llm_response(session_id, user_text)
+        reply_text = await get_llm_response(session_id, user_text)
 
         # 5. Convert reply to speech
         mp3_path = text_to_speech(reply_text)
@@ -251,8 +248,8 @@ async def chat(session_id: str, audio: UploadFile = File(...)):
             headers={
                 "X-User-Text": user_text.encode("utf-8").decode("latin-1", errors="replace"),
                 "X-Agent-Text": reply_text.encode("utf-8").decode("latin-1", errors="replace"),
-                "Access-Control_Expose-Headers":
-                "X-User-Text, X-Agent_Text",
+                "Access-Control-Expose-Headers":
+                "X-User-Text, X-Agent-Text",
             },
            
         )
@@ -267,7 +264,7 @@ async def chat(session_id: str, audio: UploadFile = File(...)):
         except: pass
 
 
-@app.delete("/session/{session_id}")
+@app.delete("/api/session/{session_id}")
 def clear_session(session_id: str):
     """Clear conversation history for a session."""
     if r:
@@ -277,7 +274,7 @@ def clear_session(session_id: str):
     return {"cleared": session_id}
 
 
-@app.get("/greeting/{session_id}")
+@app.get("/api/greeting/{session_id}")
 def greeting(session_id: str):
     """
     Get the opening greeting as audio.
@@ -290,6 +287,4 @@ def greeting(session_id: str):
     else:
         sessions[session_id] = greeting_history
     mp3_path = text_to_speech(text)
-    # audio_base64 = mp3_path.audios[0]
-    # audio_bytes = base64.b64decode(audio_base64)
     return FileResponse(mp3_path, media_type="audio/mpeg")
