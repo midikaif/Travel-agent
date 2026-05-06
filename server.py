@@ -132,10 +132,10 @@ def transcribe(audio_path: str) -> str:
     return result.text.strip()
 
 
-def get_llm_response(session_id: str, user_text: str) -> str:
+async def get_llm_response(session_id: str, user_text: str) -> str:
     # Get conversation history from Redis or memory
     if r:
-        history_json = r.get(f"session:{session_id}")
+        history_json = await r.get(f"session:{session_id}")
         history = json.loads(history_json) if history_json else []
     else:
         history = sessions.get(session_id, [])
